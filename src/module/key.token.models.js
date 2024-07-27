@@ -1,8 +1,10 @@
 import mongoose from "mongoose";
 
 const KeyTokenSchema = new mongoose.Schema({
-  user: mongoose.Schema.Types.ObjectId,
-  ref: 'Users',
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Users'
+  },
   publicKey: {
     type: String,
     required: true
