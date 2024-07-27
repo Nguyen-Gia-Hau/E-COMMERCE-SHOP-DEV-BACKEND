@@ -25,7 +25,47 @@ class AccessServices {
 
 
   async login({ email, password, refreshToken = null }) {
+    try {
+      // check email is registered
+      const user = await UserServices.findByEmail(email)
+      if (!user) return {
+        code: 'xxx',
+        message: `Your account does not exist.Please register to create a new account.`
+      }
 
+      const { publicKey, privateKey } = await this.generalKeyPair()
+
+      // create key tokens
+      const tokens = await generateTokens({ email, userId: user._id }, publicKey, privateKey)
+
+      // store key
+      const storeKey = await KeyTokenServices.saveKeyToken({
+        userId: user._id,
+        publicKey: publicKey,
+        refreshToken: tokens.refreshToken
+      })
+
+      if (!storeKey) return {
+        code: 'xxx',
+        message: `Store key error`
+      }
+
+      return {
+        code: '0000',
+        message: 'Registration successful! Your account has been created successfully.',
+        metadata: {
+          user,
+          tokens,
+          privateKey
+        }
+      }
+    } catch (error) {
+      console.log(error)
+      return {
+        code: 'xxxx',
+        message: error
+      }
+    }
   }
 
   async register({ name, email, password }) {
@@ -34,7 +74,7 @@ class AccessServices {
       const user = await UserServices.findByEmail(email)
       if (user) return {
         code: 'xxx',
-        message: `Your email has already been registered. Please enter a different email address to continue.`
+        message: `Your email has already been registered.Please enter a different email address to continue.`
       }
 
       const newUser = await UserServices.createNewUser({ name, email, password })
