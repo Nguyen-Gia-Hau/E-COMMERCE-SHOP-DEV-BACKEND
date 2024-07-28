@@ -1,7 +1,14 @@
-import UserServices from "./user.access.services.js"
 import crypto from 'crypto'
 import { generateTokens } from '../auth/auth.untils.js'
 import KeyTokenServices from "./key.token.services.js";
+import ShopServices from './shop.access.services.js';
+
+const RoleShop = {
+  SHOP: 'SHOP',
+  WRITER: 'WRITER',
+  EDITOR: 'EDITOR',
+  ADMIN: 'ADMIN'
+}
 
 class AccessServices {
   async generalKeyPair() {
@@ -27,8 +34,8 @@ class AccessServices {
   async login({ email, password, refreshToken = null }) {
     try {
       // check email is registered
-      const user = await UserServices.findByEmail(email)
-      if (!user) return {
+      const shop = await ShopServices.findByEmail(email)
+      if (!shop) return {
         code: 'xxx',
         message: `Your account does not exist.Please register to create a new account.`
       }
@@ -36,11 +43,11 @@ class AccessServices {
       const { publicKey, privateKey } = await this.generalKeyPair()
 
       // create key tokens
-      const tokens = await generateTokens({ email, userId: user._id }, publicKey, privateKey)
+      const tokens = await generateTokens({ email, userId: shop._id }, publicKey, privateKey)
 
       // store key
       const storeKey = await KeyTokenServices.saveKeyToken({
-        userId: user._id,
+        userId: shop._id,
         publicKey: publicKey,
         refreshToken: tokens.refreshToken
       })
@@ -54,7 +61,7 @@ class AccessServices {
         code: '0000',
         message: 'Registration successful! Your account has been created successfully.',
         metadata: {
-          user,
+          shop,
           tokens,
           privateKey
         }
@@ -71,22 +78,22 @@ class AccessServices {
   async register({ name, email, password }) {
     try {
       // check email is registered 
-      const user = await UserServices.findByEmail(email)
-      if (user) return {
+      const shop = await ShopServices.findByEmail(email)
+      if (shop) return {
         code: 'xxx',
-        message: `Your email has already been registered.Please enter a different email address to continue.`
+        message: `Your email has already been registered. Please enter a different email address to continue.`
       }
 
-      const newUser = await UserServices.createNewUser({ name, email, password })
-      if (newUser) {
+      const newShop = await ShopServices.createNewShop({ name, email, password, roles: [RoleShop.SHOP] })
+      if (newShop) {
         // create publicKey and privateKey
         const { publicKey, privateKey } = await this.generalKeyPair()
 
         // create keyTokens
-        const tokens = await generateTokens({ userId: newUser._id, email }, publicKey, privateKey)
+        const tokens = await generateTokens({ userId: newShop._id, email }, publicKey, privateKey)
 
         const storeKey = await KeyTokenServices.saveKeyToken({
-          userId: newUser._id,
+          userId: newShop._id,
           publicKey: publicKey,
           refreshToken: tokens.refreshToken
         })
@@ -100,7 +107,7 @@ class AccessServices {
           code: '0000',
           message: 'Registration successful! Your account has been created successfully.',
           metadata: {
-            newUser,
+            newShop,
             tokens,
             privateKey
           }
