@@ -8,6 +8,5 @@ router.post('/user/login', asynHandler(new AccessController().login))
 router.post('/user/register', asynHandler(new AccessController().register))
 router.post('/user/logout',)
 router.post('/user/forgotPassword',)
-router.post('/user/resetPassword',)
 
 export default router
